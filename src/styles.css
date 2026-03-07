@@ -10,6 +10,7 @@
   --bg-tertiary: #0f3460;
   --accent: #e94560;
   --accent-light: #ff6b6b;
+  --idle: #a78bfa;
   --text-primary: #eee;
   --text-secondary: #aaa;
   --text-muted: #666;
@@ -53,8 +54,9 @@ button, input, a {
 }
 
 .ada-image-container {
-  position: relative;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 15px;
 }
 
@@ -62,7 +64,8 @@ button, input, a {
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  border: 3px solid var(--accent);
+  border: 3px solid var(--idle);
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.3);
   object-fit: cover;
   background: var(--bg-tertiary);
   transition: border-color 0.3s, box-shadow 0.3s;
@@ -85,11 +88,9 @@ button, input, a {
 }
 
 .ada-status {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
+  margin-top: 10px;
   background: var(--bg-primary);
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 12px;
   font-size: 0.75rem;
   display: flex;
@@ -101,6 +102,10 @@ button, input, a {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  background: var(--idle);
+}
+
+.status-dot.speaking {
   background: var(--success);
 }
 

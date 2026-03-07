@@ -651,6 +651,7 @@ function setStatus(type, text) {
   statusDot.className = 'status-dot';
   if (type === 'recording') statusDot.classList.add('recording');
   if (type === 'thinking') statusDot.classList.add('thinking');
+  if (type === 'speaking') statusDot.classList.add('speaking');
 
   statusText.textContent = text;
 }
