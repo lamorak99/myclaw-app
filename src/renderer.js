@@ -65,21 +65,52 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function createLogPanel() {
+  // Add log panel toggle button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'logToggle';
+  toggleBtn.className = 'log-toggle';
+  toggleBtn.innerHTML = '&#9650; Logs';
+  toggleBtn.onclick = toggleLogPanel;
+  document.body.appendChild(toggleBtn);
+
   // Add log panel to the UI
   const logPanel = document.createElement('div');
   logPanel.id = 'logPanel';
-  logPanel.className = 'log-panel';
+  logPanel.className = 'log-panel collapsed';
   document.body.appendChild(logPanel);
 
   // Add styles for log panel
   const style = document.createElement('style');
   style.textContent = `
+    .log-toggle {
+      position: fixed;
+      bottom: 0;
+      right: 20px;
+      background: #1a1a2e;
+      border: 1px solid #e94560;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      color: #e94560;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-family: 'SF Mono', Monaco, monospace;
+      cursor: pointer;
+      z-index: 10000;
+      transition: all 0.2s;
+    }
+    .log-toggle:hover {
+      background: #e94560;
+      color: white;
+    }
+    .log-toggle.expanded {
+      bottom: 300px;
+    }
     .log-panel {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 450px;
+      height: 300px;
       background: #0a0a15;
       border-top: 2px solid #e94560;
       font-family: 'SF Mono', Monaco, monospace;
@@ -87,6 +118,10 @@ function createLogPanel() {
       overflow-y: scroll;
       padding: 10px 15px;
       z-index: 9999;
+      transition: transform 0.3s ease;
+    }
+    .log-panel.collapsed {
+      transform: translateY(100%);
     }
     .log-panel::-webkit-scrollbar {
       width: 12px;
@@ -114,9 +149,25 @@ function createLogPanel() {
     .log-API .log-cat { color: #fbbf24; }
     .log-ERROR .log-cat { color: #ff0000; }
     .log-KEY .log-cat { color: #ff6b6b; }
-    .app-container { margin-bottom: 450px; }
   `;
   document.head.appendChild(style);
+}
+
+let logPanelExpanded = false;
+function toggleLogPanel() {
+  const panel = document.getElementById('logPanel');
+  const toggle = document.getElementById('logToggle');
+  logPanelExpanded = !logPanelExpanded;
+
+  if (logPanelExpanded) {
+    panel.classList.remove('collapsed');
+    toggle.classList.add('expanded');
+    toggle.innerHTML = '&#9660; Logs';
+  } else {
+    panel.classList.add('collapsed');
+    toggle.classList.remove('expanded');
+    toggle.innerHTML = '&#9650; Logs';
+  }
 }
 
 function setupEventListeners() {
@@ -128,6 +179,11 @@ function setupEventListeners() {
       e.preventDefault();
       log('KEY', 'Spacebar pressed - starting recording');
       startRecording();
+    }
+    // Backtick toggles log panel
+    if (e.code === 'Backquote') {
+      e.preventDefault();
+      toggleLogPanel();
     }
   });
 
