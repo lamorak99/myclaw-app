@@ -1,7 +1,7 @@
 {
-  "name": "ada-assistant",
+  "name": "gerty-assistant",
   "version": "0.1.0",
-  "description": "Ada - Personal AI Assistant with voice interface",
+  "description": "Gerty - Personal AI Assistant with voice interface",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -19,8 +19,8 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.myclaw.ada",
-    "productName": "Ada",
+    "appId": "com.myclaw.gerty",
+    "productName": "Gerty",
     "directories": {
       "output": "dist"
     },

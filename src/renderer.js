@@ -57,7 +57,7 @@ let recordingStartTime = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-  log('INIT', 'Ada app initializing');
+  log('INIT', 'Gerty app initializing');
   createLogPanel();
   setupEventListeners();
   playGreeting();
@@ -119,6 +119,7 @@ function createLogPanel() {
       padding: 10px 15px;
       z-index: 9999;
       transition: transform 0.3s ease;
+      -webkit-app-region: no-drag;
     }
     .log-panel.collapsed {
       transform: translateY(100%);
@@ -247,7 +248,7 @@ async function playGreeting() {
     const response = await fetch(`${API_BASE}/speak`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'text=' + encodeURIComponent("Hello Doug. Ada here, ready to assist you.")
+      body: 'text=' + encodeURIComponent("Hello Doug. Gerty here, ready to assist you.")
     });
 
     if (response.ok) {
@@ -569,7 +570,7 @@ function showAdaResponse(text) {
   canvasFrame.classList.add('hidden');
   canvasContent.style.display = 'block';
 
-  canvasTitle.textContent = 'Ada';
+  canvasTitle.textContent = 'Gerty';
 
   // Parse and render the response
   const html = parseMarkdown(text);

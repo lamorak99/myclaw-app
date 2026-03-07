@@ -304,6 +304,7 @@ kbd {
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  -webkit-app-region: no-drag;
 }
 
 .canvas-frame {
