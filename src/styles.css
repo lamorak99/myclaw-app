@@ -1,0 +1,430 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-tertiary: #0f3460;
+  --accent: #e94560;
+  --accent-light: #ff6b6b;
+  --text-primary: #eee;
+  --text-secondary: #aaa;
+  --text-muted: #666;
+  --border: #333;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+button, input, a {
+  -webkit-app-region: no-drag;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 320px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px 20px;
+}
+
+.ada-profile {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-top: 20px;
+}
+
+.ada-image-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.ada-image {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  object-fit: cover;
+  background: var(--bg-tertiary);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.ada-image.speaking {
+  border-color: var(--success);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.ada-image.listening {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+  50% { box-shadow: 0 0 30px rgba(74, 222, 128, 0.6); }
+}
+
+.ada-status {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: var(--bg-primary);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.status-dot.recording {
+  background: var(--accent);
+  animation: blink 0.5s infinite;
+}
+
+.status-dot.thinking {
+  background: var(--warning);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.ada-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.ada-title {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Voice Control */
+.voice-control {
+  margin-bottom: 20px;
+}
+
+.ptt-button {
+  width: 100%;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.ptt-button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ptt-button.active {
+  background: var(--accent);
+  border-color: var(--accent-light);
+  transform: scale(0.98);
+}
+
+.mic-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.ptt-label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+kbd {
+  background: var(--bg-primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9em;
+  border: 1px solid var(--border);
+}
+
+.waveform-container {
+  margin-top: 15px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 10px;
+  display: none;
+}
+
+.waveform-container.visible {
+  display: block;
+}
+
+#waveformCanvas {
+  width: 100%;
+  height: 40px;
+}
+
+.recording-indicator {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.recording-indicator.visible {
+  display: flex;
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: blink 0.5s infinite;
+}
+
+/* Transcript Area */
+.transcript-area {
+  flex: 1;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 15px;
+  overflow-y: auto;
+  display: none;
+}
+
+.transcript-area.visible {
+  display: block;
+}
+
+.transcript-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.transcript-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Canvas Area */
+.canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 25px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  -webkit-app-region: drag;
+}
+
+.canvas-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.canvas-controls {
+  display: flex;
+  gap: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.canvas-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.canvas-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.canvas-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.canvas-frame {
+  flex: 1;
+  border: none;
+  background: white;
+}
+
+.canvas-frame.hidden {
+  display: none;
+}
+
+/* Welcome Message */
+.welcome-message {
+  max-width: 600px;
+  margin: 100px auto;
+  text-align: center;
+}
+
+.welcome-message h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.welcome-message p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+}
+
+.welcome-message .hint {
+  margin-top: 30px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* Ada's Content Presentations */
+.ada-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ada-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  max-width: 800px;
+}
+
+.ada-text p {
+  margin-bottom: 1em;
+}
+
+.ada-text h1, .ada-text h2, .ada-text h3 {
+  color: var(--accent-light);
+  margin: 1.5em 0 0.5em;
+}
+
+.ada-text h1 { font-size: 1.8rem; }
+.ada-text h2 { font-size: 1.4rem; }
+.ada-text h3 { font-size: 1.2rem; }
+
+.ada-text code {
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 0.9em;
+}
+
+.ada-text pre {
+  background: var(--bg-secondary);
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.ada-text pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.ada-text ul, .ada-text ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.ada-text li {
+  margin-bottom: 0.5em;
+}
+
+.ada-text a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.ada-text a:hover {
+  text-decoration: underline;
+}
+
+/* Status messages */
+.status-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bg-tertiary);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  animation: slideIn 0.3s ease;
+  z-index: 1000;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.status-message.error {
+  background: #7f1d1d;
+  border: 1px solid var(--accent);
+}

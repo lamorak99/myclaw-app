@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f"/>
+      <stop offset="100%" style="stop-color:#0f3460"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="98" fill="url(#bg)"/>
+
+  <!-- Stylized portrait silhouette -->
+  <g fill="#eee" opacity="0.9">
+    <!-- Hair outline - Victorian style updo -->
+    <ellipse cx="100" cy="65" rx="45" ry="40"/>
+    <ellipse cx="100" cy="50" rx="35" ry="25"/>
+    <ellipse cx="70" cy="70" rx="15" ry="20"/>
+    <ellipse cx="130" cy="70" rx="15" ry="20"/>
+
+    <!-- Face -->
+    <ellipse cx="100" cy="95" rx="32" ry="38"/>
+
+    <!-- Neck and shoulders -->
+    <path d="M75 130 Q100 145 125 130 L135 160 Q100 175 65 160 Z"/>
+  </g>
+
+  <!-- Face features - subtle -->
+  <g fill="#0f3460" opacity="0.3">
+    <!-- Eyes -->
+    <ellipse cx="88" cy="90" rx="5" ry="3"/>
+    <ellipse cx="112" cy="90" rx="5" ry="3"/>
+
+    <!-- Slight smile -->
+    <path d="M90 108 Q100 114 110 108" fill="none" stroke="#0f3460" stroke-width="2" opacity="0.3"/>
+  </g>
+
+  <!-- Decorative elements - Victorian inspired -->
+  <g fill="url(#accent)" opacity="0.8">
+    <!-- Hair ornament -->
+    <circle cx="100" cy="35" r="4"/>
+    <circle cx="90" cy="40" r="2"/>
+    <circle cx="110" cy="40" r="2"/>
+
+    <!-- Necklace/collar detail -->
+    <circle cx="100" cy="140" r="3"/>
+    <circle cx="90" cy="142" r="2"/>
+    <circle cx="110" cy="142" r="2"/>
+  </g>
+
+  <!-- Subtle glow ring -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="url(#accent)" stroke-width="1" opacity="0.3"/>
+</svg>

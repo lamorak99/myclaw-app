@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob: data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000; frame-src 'self' https:;">
+  <title>Ada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left sidebar with Ada -->
+    <aside class="sidebar">
+      <div class="ada-profile">
+        <div class="ada-image-container">
+          <img src="../assets/ada-portrait.png" alt="Ada" class="ada-image" id="adaImage">
+          <div class="ada-status" id="adaStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">Ready</span>
+          </div>
+        </div>
+        <h1 class="ada-name">Ada</h1>
+        <p class="ada-title">Personal AI Assistant</p>
+      </div>
+
+      <div class="voice-control">
+        <button class="ptt-button" id="pttButton">
+          <svg class="mic-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+          <span class="ptt-label">Hold Space to Talk</span>
+        </button>
+
+        <div class="waveform-container" id="waveformContainer">
+          <canvas id="waveformCanvas" width="200" height="40"></canvas>
+        </div>
+
+        <div class="recording-indicator" id="recordingIndicator">
+          <div class="recording-dot"></div>
+          <span>Recording...</span>
+        </div>
+      </div>
+
+      <div class="transcript-area" id="transcriptArea">
+        <div class="transcript-label">You said:</div>
+        <div class="transcript-text" id="transcriptText"></div>
+      </div>
+    </aside>
+
+    <!-- Main canvas area -->
+    <main class="canvas-area">
+      <div class="canvas-header">
+        <div class="canvas-title" id="canvasTitle">Welcome</div>
+        <div class="canvas-controls">
+          <button class="canvas-btn" id="clearCanvasBtn" title="Clear canvas">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="canvas-content" id="canvasContent">
+        <!-- Ada's presentation content appears here -->
+        <div class="welcome-message" id="welcomeMessage">
+          <h2>Hello, Doug</h2>
+          <p>I'm Ada, your personal AI assistant. Hold the spacebar and speak to me, or I can show you information, diagrams, and web content right here in this canvas.</p>
+          <p class="hint">Press and hold <kbd>Space</kbd> to talk</p>
+        </div>
+      </div>
+
+      <!-- Embedded content frame (for web pages) -->
+      <iframe class="canvas-frame hidden" id="canvasFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

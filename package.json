@@ -1,0 +1,38 @@
+{
+  "name": "ada-assistant",
+  "version": "0.1.0",
+  "description": "Ada - Personal AI Assistant with voice interface",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "author": "Doug",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.myclaw.ada",
+    "productName": "Ada",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "icon": "assets/icon.png"
+    }
+  }
+}
