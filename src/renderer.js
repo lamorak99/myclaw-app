@@ -553,26 +553,32 @@ async function processVoiceInput(audioBlob) {
                 log('API', 'Transcript received', { text: data.text, elapsedMs: elapsed });
                 transcriptArea.classList.add('visible');
                 transcriptText.textContent = data.text;
-                setStatus('thinking', 'Thinking...');
+                setStatus('thinking', 'Processing...');
+                break;
+
+              case 'acknowledgment':
+                log('API', 'Acknowledgment received', { text: data.text, elapsedMs: elapsed });
+                setStatus('speaking', 'Gerty is responding...');
+                adaImage.classList.add('speaking');
+                // Play acknowledgment immediately (not queued)
+                await playBase64Audio(data.audio);
+                adaImage.classList.remove('speaking');
+                setStatus('thinking', 'Researching...');
                 break;
 
               case 'text':
-                if (!firstTextReceived) {
-                  log('API', 'First text chunk received', { elapsedMs: elapsed });
-                  firstTextReceived = true;
-                  // Initialize canvas for streaming response
-                  welcomeMessage.style.display = 'none';
-                  canvasFrame.classList.add('hidden');
-                  canvasContent.style.display = 'block';
-                  canvasTitle.textContent = 'Gerty';
-                  canvasContent.innerHTML = '<div class="ada-content"><div class="ada-text"></div></div>';
-                }
+                // Legacy: streaming text chunks (no longer used but kept for compatibility)
                 fullResponse += data.chunk;
-                // Update displayed text
-                const textEl = canvasContent.querySelector('.ada-text');
-                if (textEl) {
-                  textEl.innerHTML = parseMarkdown(fullResponse);
-                }
+                break;
+
+              case 'display':
+                // New: full display text arrives after audio is queued
+                log('API', 'Display text received', { elapsedMs: elapsed, length: data.text?.length });
+                welcomeMessage.style.display = 'none';
+                canvasFrame.classList.add('hidden');
+                canvasContent.style.display = 'block';
+                canvasTitle.textContent = 'Gerty';
+                canvasContent.innerHTML = `<div class="ada-content"><div class="ada-text">${parseMarkdown(data.text)}</div></div>`;
                 break;
 
               case 'audio':
@@ -581,7 +587,7 @@ async function processVoiceInput(audioBlob) {
                 break;
 
               case 'done':
-                log('API', 'Stream complete', { elapsedMs: elapsed, responseLength: data.full_response?.length });
+                log('API', 'Stream complete', { elapsedMs: elapsed });
                 break;
 
               case 'error':
