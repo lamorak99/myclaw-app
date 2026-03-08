@@ -8,8 +8,9 @@
   --bg-primary: #1a1a2e;
   --bg-secondary: #16213e;
   --bg-tertiary: #0f3460;
-  --accent: #e94560;
-  --accent-light: #ff6b6b;
+  --accent: #38bdf8;
+  --accent-light: #7dd3fc;
+  --accent-recording: #e94560;
   --idle: #a78bfa;
   --text-primary: #eee;
   --text-secondary: #aaa;
@@ -78,7 +79,7 @@ button, input, a {
 }
 
 .ada-image.listening {
-  border-color: var(--accent);
+  border-color: var(--accent-recording);
   box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
 }
 
@@ -110,7 +111,7 @@ button, input, a {
 }
 
 .status-dot.recording {
-  background: var(--accent);
+  background: var(--accent-recording);
   animation: blink 0.5s infinite;
 }
 
@@ -158,13 +159,13 @@ button, input, a {
 }
 
 .ptt-button:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-recording);
+  border-color: var(--accent-recording);
 }
 
 .ptt-button.active {
-  background: var(--accent);
-  border-color: var(--accent-light);
+  background: var(--accent-recording);
+  border-color: #ff8a8a;
   transform: scale(0.98);
 }
 
@@ -210,7 +211,7 @@ kbd {
   justify-content: center;
   gap: 8px;
   margin-top: 10px;
-  color: var(--accent);
+  color: var(--accent-recording);
   font-size: 0.9rem;
 }
 
@@ -221,7 +222,7 @@ kbd {
 .recording-dot {
   width: 10px;
   height: 10px;
-  background: var(--accent);
+  background: var(--accent-recording);
   border-radius: 50%;
   animation: blink 0.5s infinite;
 }
@@ -432,5 +433,5 @@ kbd {
 
 .status-message.error {
   background: #7f1d1d;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--accent-recording);
 }
