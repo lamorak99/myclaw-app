@@ -454,71 +454,155 @@ function drawWaveform() {
   animationFrameId = requestAnimationFrame(drawWaveform);
 }
 
-// Process voice input
+// Audio queue for streaming playback
+const audioQueue = [];
+let isPlayingAudio = false;
+
+async function playNextInQueue() {
+  if (isPlayingAudio || audioQueue.length === 0) return;
+
+  isPlayingAudio = true;
+  const base64Audio = audioQueue.shift();
+
+  try {
+    await playBase64Audio(base64Audio);
+  } catch (e) {
+    log('ERROR', 'Queue audio playback failed', { error: e.message });
+  }
+
+  isPlayingAudio = false;
+
+  // Play next if available
+  if (audioQueue.length > 0) {
+    playNextInQueue();
+  } else {
+    // All audio done
+    adaImage.classList.remove('speaking');
+    setStatus('ready', 'Ready');
+    log('AUDIO', 'All streaming audio complete');
+  }
+}
+
+function queueAudio(base64Audio) {
+  audioQueue.push(base64Audio);
+  log('AUDIO', 'Audio queued', { queueLength: audioQueue.length });
+
+  if (!isPlayingAudio) {
+    setStatus('speaking', 'Speaking...');
+    adaImage.classList.add('speaking');
+    playNextInQueue();
+  }
+}
+
+// Process voice input with streaming
 async function processVoiceInput(audioBlob) {
-  log('API', 'Processing voice input', { blobSize: audioBlob.size });
+  log('API', 'Processing voice input (streaming)', { blobSize: audioBlob.size });
   setStatus('thinking', 'Processing...');
+
+  // Clear audio queue
+  audioQueue.length = 0;
+  isPlayingAudio = false;
 
   try {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
 
-    log('API', 'Sending POST to /voice');
+    log('API', 'Sending POST to /voice/stream');
     const startTime = Date.now();
 
-    const response = await fetch(`${API_BASE}/voice`, {
+    const response = await fetch(`${API_BASE}/voice/stream`, {
       method: 'POST',
       body: formData
     });
 
-    const elapsed = Date.now() - startTime;
-    log('API', 'Response received', { status: response.status, elapsedMs: elapsed });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-    const data = await response.json();
-    log('API', 'Response data', {
-      hasTranscript: !!data.transcript,
-      transcriptLength: data.transcript?.length,
-      transcript: data.transcript,
-      hasResponse: !!data.response,
-      responseLength: data.response?.length,
-      hasAudio: !!data.audio,
-      error: data.error
-    });
+    log('API', 'Stream connected', { status: response.status });
 
-    if (data.error) {
-      log('ERROR', 'API returned error', { error: data.error });
-      showStatusMessage(data.error, true);
+    // Read the SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullResponse = '';
+    let firstTextReceived = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        log('API', 'Stream ended');
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE messages
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            const elapsed = Date.now() - startTime;
+
+            switch (data.type) {
+              case 'transcript':
+                log('API', 'Transcript received', { text: data.text, elapsedMs: elapsed });
+                transcriptArea.classList.add('visible');
+                transcriptText.textContent = data.text;
+                setStatus('thinking', 'Thinking...');
+                break;
+
+              case 'text':
+                if (!firstTextReceived) {
+                  log('API', 'First text chunk received', { elapsedMs: elapsed });
+                  firstTextReceived = true;
+                  // Initialize canvas for streaming response
+                  welcomeMessage.style.display = 'none';
+                  canvasFrame.classList.add('hidden');
+                  canvasContent.style.display = 'block';
+                  canvasTitle.textContent = 'Gerty';
+                  canvasContent.innerHTML = '<div class="ada-content"><div class="ada-text"></div></div>';
+                }
+                fullResponse += data.chunk;
+                // Update displayed text
+                const textEl = canvasContent.querySelector('.ada-text');
+                if (textEl) {
+                  textEl.innerHTML = parseMarkdown(fullResponse);
+                }
+                break;
+
+              case 'audio':
+                log('AUDIO', 'Audio chunk received', { elapsedMs: elapsed, base64Length: data.data.length });
+                queueAudio(data.data);
+                break;
+
+              case 'done':
+                log('API', 'Stream complete', { elapsedMs: elapsed, responseLength: data.full_response?.length });
+                break;
+
+              case 'error':
+                log('ERROR', 'Stream error', { message: data.message });
+                showStatusMessage(data.message, true);
+                setStatus('ready', 'Ready');
+                break;
+            }
+          } catch (e) {
+            log('ERROR', 'Failed to parse SSE data', { line, error: e.message });
+          }
+        }
+      }
+    }
+
+    // If no audio was queued, set ready status
+    if (audioQueue.length === 0 && !isPlayingAudio) {
       setStatus('ready', 'Ready');
-      return;
     }
 
-    // Show transcript
-    if (data.transcript) {
-      log('UI', 'Showing transcript', { text: data.transcript });
-      transcriptArea.classList.add('visible');
-      transcriptText.textContent = data.transcript;
-    }
-
-    // Show response in canvas
-    if (data.response) {
-      log('UI', 'Showing response in canvas');
-      showAdaResponse(data.response);
-    }
-
-    // Play audio response
-    if (data.audio) {
-      log('AUDIO', 'Playing response audio', { base64Length: data.audio.length });
-      setStatus('speaking', 'Speaking...');
-      adaImage.classList.add('speaking');
-
-      await playBase64Audio(data.audio);
-
-      adaImage.classList.remove('speaking');
-      log('AUDIO', 'Response audio complete');
-    }
-
-    setStatus('ready', 'Ready');
-    log('API', 'Voice processing complete');
+    log('API', 'Voice processing complete', { totalElapsedMs: Date.now() - startTime });
 
   } catch (e) {
     log('ERROR', 'Voice processing failed', { error: e.message });
