@@ -620,6 +620,22 @@ kbd {
   color: var(--accent-recording);
 }
 
+.dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  margin-left: 8px;
+  transition: all 0.2s;
+}
+
+.dismiss-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 .panel-content {
   padding: 12px 16px;
 }

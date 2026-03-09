@@ -789,6 +789,10 @@ class DashboardView {
     this.dashboardUpdated = document.getElementById('dashboardUpdated');
     this.refreshBtn = document.getElementById('refreshDashboard');
     this.activityFilter = document.getElementById('activityFilter');
+    this.dismissErrorsBtn = document.getElementById('dismissErrorsBtn');
+
+    // Track dismissed errors timestamp
+    this.dismissedErrorsUntil = localStorage.getItem('dismissedErrorsUntil') || null;
 
     this.setupEventListeners();
   }
@@ -799,6 +803,21 @@ class DashboardView {
 
     // Activity filter
     this.activityFilter?.addEventListener('change', () => this.loadActivity());
+
+    // Dismiss errors button
+    this.dismissErrorsBtn?.addEventListener('click', () => this.dismissErrors());
+  }
+
+  dismissErrors() {
+    // Store current time - any errors before this will be hidden
+    const now = new Date().toISOString();
+    this.dismissedErrorsUntil = now;
+    localStorage.setItem('dismissedErrorsUntil', now);
+    log('DASH', 'Errors dismissed until', { until: now });
+
+    // Hide the panel immediately
+    const panel = document.getElementById('errorsPanel');
+    if (panel) panel.classList.add('hidden');
   }
 
   async start() {
@@ -1085,7 +1104,17 @@ class DashboardView {
 
       const data = await response.json();
 
-      const totalErrors = data.error_count + data.warning_count;
+      // Filter out errors that were dismissed
+      const dismissedUntil = this.dismissedErrorsUntil ? new Date(this.dismissedErrorsUntil) : null;
+
+      const filteredErrors = dismissedUntil
+        ? data.errors.filter(e => new Date(e.timestamp) > dismissedUntil)
+        : data.errors;
+      const filteredWarnings = dismissedUntil
+        ? data.warnings.filter(w => new Date(w.timestamp) > dismissedUntil)
+        : data.warnings;
+
+      const totalErrors = filteredErrors.length + filteredWarnings.length;
 
       if (totalErrors === 0) {
         panel.classList.add('hidden');
@@ -1095,12 +1124,12 @@ class DashboardView {
       panel.classList.remove('hidden');
 
       if (badge) {
-        badge.textContent = `${data.error_count} errors, ${data.warning_count} warnings`;
+        badge.textContent = `${filteredErrors.length} errors, ${filteredWarnings.length} warnings`;
       }
 
       const allItems = [
-        ...data.errors.map(e => ({ ...e, level: 'error' })),
-        ...data.warnings.map(w => ({ ...w, level: 'warning' }))
+        ...filteredErrors.map(e => ({ ...e, level: 'error' })),
+        ...filteredWarnings.map(w => ({ ...w, level: 'warning' }))
       ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
 
       content.innerHTML = allItems.map(item => `
