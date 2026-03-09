@@ -808,7 +808,7 @@ class DashboardView {
     this.dismissErrorsBtn?.addEventListener('click', () => this.dismissErrors());
   }
 
-  dismissErrors() {
+  async dismissErrors() {
     // Store current time - any errors before this will be hidden
     const now = new Date().toISOString();
     this.dismissedErrorsUntil = now;
@@ -818,6 +818,9 @@ class DashboardView {
     // Hide the panel immediately
     const panel = document.getElementById('errorsPanel');
     if (panel) panel.classList.add('hidden');
+
+    // Update the overall status to reflect dismissed errors
+    await this.loadSummary();
   }
 
   async start() {
@@ -886,9 +889,19 @@ class DashboardView {
 
       const data = await response.json();
 
+      // Adjust status if errors have been dismissed
+      let displayStatus = data.status;
+      if (data.status === 'degraded' && this.dismissedErrorsUntil) {
+        // Check if there are any errors after the dismissed timestamp
+        const hasUndismissedErrors = await this.hasErrorsAfter(this.dismissedErrorsUntil);
+        if (!hasUndismissedErrors) {
+          displayStatus = 'healthy';
+        }
+      }
+
       // Update overall status
-      this.overallStatus.className = `status-indicator ${data.status}`;
-      this.overallStatusLabel.textContent = this.capitalizeFirst(data.status);
+      this.overallStatus.className = `status-indicator ${displayStatus}`;
+      this.overallStatusLabel.textContent = this.capitalizeFirst(displayStatus);
 
       // Update uptime
       if (data.uptime_seconds && this.dashboardUptime) {
@@ -899,6 +912,23 @@ class DashboardView {
       log('ERROR', 'Failed to load summary', { error: e.message });
       this.overallStatus.className = 'status-indicator';
       this.overallStatusLabel.textContent = 'Offline';
+    }
+  }
+
+  async hasErrorsAfter(timestamp) {
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/errors?hours=24`);
+      if (!response.ok) return true; // Assume errors on failure
+
+      const data = await response.json();
+      const dismissedUntil = new Date(timestamp);
+
+      const hasRecentErrors = data.errors.some(e => new Date(e.timestamp) > dismissedUntil);
+      const hasRecentWarnings = data.warnings.some(w => new Date(w.timestamp) > dismissedUntil);
+
+      return hasRecentErrors || hasRecentWarnings;
+    } catch (e) {
+      return true; // Assume errors on failure
     }
   }
 
