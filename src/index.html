@@ -48,11 +48,15 @@
       </div>
     </aside>
 
-    <!-- Main canvas area -->
-    <main class="canvas-area">
-      <div class="canvas-header">
-        <div class="canvas-title" id="canvasTitle">Welcome</div>
-        <div class="canvas-controls">
+    <!-- Main content area -->
+    <main class="main-area">
+      <!-- Tab Navigation -->
+      <div class="tab-header">
+        <div class="tab-nav">
+          <button class="tab-btn active" id="tabChat" data-tab="chat">Chat</button>
+          <button class="tab-btn" id="tabDashboard" data-tab="dashboard">Dashboard</button>
+        </div>
+        <div class="tab-controls">
           <button class="canvas-btn" id="clearCanvasBtn" title="Clear canvas">
             <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -61,17 +65,101 @@
         </div>
       </div>
 
-      <div class="canvas-content" id="canvasContent">
-        <!-- Ada's presentation content appears here -->
-        <div class="welcome-message" id="welcomeMessage">
-          <h2>Hello, Doug</h2>
-          <p>I'm Gerty, your personal AI assistant. Hold the spacebar and speak to me, or I can show you information, diagrams, and web content right here in this canvas.</p>
-          <p class="hint">Press and hold <kbd>Space</kbd> to talk</p>
+      <!-- Chat Tab -->
+      <div class="tab-content active" id="chatTab">
+        <div class="canvas-content" id="canvasContent">
+          <div class="welcome-message" id="welcomeMessage">
+            <h2>Hello, Doug</h2>
+            <p>I'm Gerty, your personal AI assistant. Hold the spacebar and speak to me, or I can show you information, diagrams, and web content right here in this canvas.</p>
+            <p class="hint">Press and hold <kbd>Space</kbd> to talk</p>
+          </div>
         </div>
+        <iframe class="canvas-frame hidden" id="canvasFrame" sandbox="allow-scripts allow-same-origin"></iframe>
       </div>
 
-      <!-- Embedded content frame (for web pages) -->
-      <iframe class="canvas-frame hidden" id="canvasFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+      <!-- Dashboard Tab -->
+      <div class="tab-content" id="dashboardTab">
+        <div class="dashboard-container">
+          <!-- Status Header -->
+          <div class="dashboard-header">
+            <div class="dashboard-status" id="dashboardStatus">
+              <span class="status-indicator" id="overallStatus"></span>
+              <span class="status-label" id="overallStatusLabel">Loading...</span>
+            </div>
+            <div class="dashboard-meta">
+              <span class="dashboard-uptime" id="dashboardUptime"></span>
+              <span class="dashboard-updated" id="dashboardUpdated"></span>
+              <button class="refresh-btn" id="refreshDashboard" title="Refresh now">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                  <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Services Panel -->
+          <div class="dashboard-panel" id="servicesPanel">
+            <div class="panel-header">
+              <h3>Services</h3>
+            </div>
+            <div class="panel-content" id="servicesContent">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+
+          <!-- Two-column layout for Scheduler and Heartbeat -->
+          <div class="dashboard-row">
+            <!-- Scheduler Panel -->
+            <div class="dashboard-panel" id="schedulerPanel">
+              <div class="panel-header">
+                <h3>Scheduler</h3>
+                <span class="panel-badge" id="schedulerBadge"></span>
+              </div>
+              <div class="panel-content" id="schedulerContent">
+                <div class="loading-spinner"></div>
+              </div>
+            </div>
+
+            <!-- Heartbeat Panel -->
+            <div class="dashboard-panel" id="heartbeatPanel">
+              <div class="panel-header">
+                <h3>Heartbeat</h3>
+                <span class="panel-badge" id="heartbeatBadge"></span>
+              </div>
+              <div class="panel-content" id="heartbeatContent">
+                <div class="loading-spinner"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Feed Panel -->
+          <div class="dashboard-panel" id="activityPanel">
+            <div class="panel-header">
+              <h3>Recent Activity</h3>
+              <select class="activity-filter" id="activityFilter">
+                <option value="">All</option>
+                <option value="inbound">Inbound</option>
+                <option value="action">Actions</option>
+                <option value="outbound">Outbound</option>
+                <option value="error">Errors</option>
+              </select>
+            </div>
+            <div class="panel-content activity-feed" id="activityContent">
+              <div class="loading-spinner"></div>
+            </div>
+          </div>
+
+          <!-- Errors Panel (shown only if errors exist) -->
+          <div class="dashboard-panel error-panel hidden" id="errorsPanel">
+            <div class="panel-header">
+              <h3>Errors & Warnings</h3>
+              <span class="panel-badge error" id="errorsBadge"></span>
+            </div>
+            <div class="panel-content" id="errorsContent">
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 

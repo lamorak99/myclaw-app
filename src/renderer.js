@@ -770,3 +770,450 @@ window.ada = {
   clearCanvas,
   log
 };
+
+// ============================================
+// Dashboard Module
+// ============================================
+
+class DashboardView {
+  constructor() {
+    this.refreshInterval = 60000; // 60 seconds
+    this.refreshTimer = null;
+    this.isLoading = false;
+    this.lastUpdate = null;
+
+    // DOM elements
+    this.overallStatus = document.getElementById('overallStatus');
+    this.overallStatusLabel = document.getElementById('overallStatusLabel');
+    this.dashboardUptime = document.getElementById('dashboardUptime');
+    this.dashboardUpdated = document.getElementById('dashboardUpdated');
+    this.refreshBtn = document.getElementById('refreshDashboard');
+    this.activityFilter = document.getElementById('activityFilter');
+
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Refresh button
+    this.refreshBtn?.addEventListener('click', () => this.refresh());
+
+    // Activity filter
+    this.activityFilter?.addEventListener('change', () => this.loadActivity());
+  }
+
+  async start() {
+    log('DASH', 'Starting dashboard');
+    await this.refresh();
+    this.startAutoRefresh();
+  }
+
+  stop() {
+    log('DASH', 'Stopping dashboard');
+    this.stopAutoRefresh();
+  }
+
+  startAutoRefresh() {
+    if (this.refreshTimer) return;
+    this.refreshTimer = setInterval(() => this.refresh(), this.refreshInterval);
+    log('DASH', 'Auto-refresh started', { intervalMs: this.refreshInterval });
+  }
+
+  stopAutoRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+      log('DASH', 'Auto-refresh stopped');
+    }
+  }
+
+  async refresh() {
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+    this.refreshBtn?.classList.add('refreshing');
+    log('DASH', 'Refreshing dashboard');
+
+    try {
+      await Promise.all([
+        this.loadSummary(),
+        this.loadServices(),
+        this.loadScheduler(),
+        this.loadHeartbeat(),
+        this.loadActivity(),
+        this.loadErrors()
+      ]);
+
+      this.lastUpdate = new Date();
+      this.updateTimestamp();
+      log('DASH', 'Dashboard refresh complete');
+    } catch (e) {
+      log('ERROR', 'Dashboard refresh failed', { error: e.message });
+    } finally {
+      this.isLoading = false;
+      this.refreshBtn?.classList.remove('refreshing');
+    }
+  }
+
+  updateTimestamp() {
+    if (this.dashboardUpdated && this.lastUpdate) {
+      this.dashboardUpdated.textContent = `Updated ${this.formatTime(this.lastUpdate)}`;
+    }
+  }
+
+  async loadSummary() {
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/summary`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      // Update overall status
+      this.overallStatus.className = `status-indicator ${data.status}`;
+      this.overallStatusLabel.textContent = this.capitalizeFirst(data.status);
+
+      // Update uptime
+      if (data.uptime_seconds && this.dashboardUptime) {
+        this.dashboardUptime.textContent = `Uptime: ${this.formatDuration(data.uptime_seconds)}`;
+      }
+
+    } catch (e) {
+      log('ERROR', 'Failed to load summary', { error: e.message });
+      this.overallStatus.className = 'status-indicator';
+      this.overallStatusLabel.textContent = 'Offline';
+    }
+  }
+
+  async loadServices() {
+    const content = document.getElementById('servicesContent');
+    if (!content) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/services`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      content.innerHTML = `
+        <table class="services-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Last Active</th>
+              <th>Errors (24h)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.services.map(s => `
+              <tr>
+                <td>${this.capitalizeFirst(s.name)}</td>
+                <td>
+                  <span class="service-status">
+                    <span class="service-dot ${s.state}"></span>
+                    ${this.capitalizeFirst(s.state)}
+                  </span>
+                </td>
+                <td>${s.last_active ? this.formatRelativeTime(s.last_active) : '-'}</td>
+                <td>${s.error_count_24h || 0}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } catch (e) {
+      log('ERROR', 'Failed to load services', { error: e.message });
+      content.innerHTML = '<div class="empty-state">Failed to load services</div>';
+    }
+  }
+
+  async loadScheduler() {
+    const content = document.getElementById('schedulerContent');
+    const badge = document.getElementById('schedulerBadge');
+    if (!content) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/scheduler`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      // Update badge
+      if (badge) {
+        badge.textContent = data.running ? 'Running' : 'Stopped';
+        badge.className = `panel-badge ${data.running ? 'running' : 'stopped'}`;
+      }
+
+      content.innerHTML = `
+        <div class="detail-row">
+          <span class="detail-label">Jobs</span>
+          <span class="detail-value">${data.enabled_job_count} enabled / ${data.job_count} total</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Next Run</span>
+          <span class="detail-value">${data.next_job ? `${data.next_job} at ${this.formatTime(data.next_run)}` : 'None scheduled'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Recent Failures</span>
+          <span class="detail-value">${data.recent_failures || 0}</span>
+        </div>
+        ${data.jobs.length > 0 ? `
+          <div class="job-list">
+            ${data.jobs.slice(0, 5).map(job => `
+              <div class="job-item">
+                <div>
+                  <span class="job-name">${job.name}</span>
+                  <span class="job-schedule">${job.schedule}</span>
+                </div>
+                <span class="job-status">
+                  <span class="service-dot ${job.last_status === 'success' ? 'online' : job.last_status === 'failed' ? 'error' : 'idle'}"></span>
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      `;
+    } catch (e) {
+      log('ERROR', 'Failed to load scheduler', { error: e.message });
+      content.innerHTML = '<div class="empty-state">Failed to load scheduler</div>';
+    }
+  }
+
+  async loadHeartbeat() {
+    const content = document.getElementById('heartbeatContent');
+    const badge = document.getElementById('heartbeatBadge');
+    if (!content) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/heartbeat`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      // Update badge
+      if (badge) {
+        const status = data.enabled ? (data.is_active_hours ? 'Active' : 'Idle') : 'Disabled';
+        badge.textContent = status;
+        badge.className = `panel-badge ${data.enabled && data.is_active_hours ? 'running' : ''}`;
+      }
+
+      content.innerHTML = `
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value">${data.enabled ? (data.is_active_hours ? 'Active' : 'Outside active hours') : 'Disabled'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Frequency</span>
+          <span class="detail-value">Every ${data.frequency_minutes} minutes</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Active Hours</span>
+          <span class="detail-value">${data.active_hours_start} - ${data.active_hours_end}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Timezone</span>
+          <span class="detail-value">${data.timezone}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Last Run</span>
+          <span class="detail-value">${data.last_run ? this.formatRelativeTime(data.last_run) : 'Never'}</span>
+        </div>
+        ${data.tasks.length > 0 ? `
+          <div class="job-list">
+            ${data.tasks.map(task => `
+              <div class="job-item">
+                <div>
+                  <span class="job-name">${task.name}</span>
+                </div>
+                <span class="job-status">
+                  <span class="service-dot ${task.enabled ? 'online' : 'offline'}"></span>
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      `;
+    } catch (e) {
+      log('ERROR', 'Failed to load heartbeat', { error: e.message });
+      content.innerHTML = '<div class="empty-state">Failed to load heartbeat</div>';
+    }
+  }
+
+  async loadActivity() {
+    const content = document.getElementById('activityContent');
+    if (!content) return;
+
+    const filterValue = this.activityFilter?.value || '';
+    const typesParam = filterValue ? `&types=${filterValue}` : '';
+
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/activity?limit=30${typesParam}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      if (data.items.length === 0) {
+        content.innerHTML = '<div class="empty-state">No recent activity</div>';
+        return;
+      }
+
+      content.innerHTML = data.items.map(item => `
+        <div class="activity-item">
+          <span class="activity-time">${this.formatTime(item.timestamp)}</span>
+          <span class="activity-icon ${item.type}">${this.getActivityIcon(item.type)}</span>
+          <div class="activity-details">
+            <span class="activity-action">${item.action}</span>
+            <span class="activity-source">[${item.source}]</span>
+            ${item.preview ? `<div class="activity-preview">${this.escapeHtml(item.preview)}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      log('ERROR', 'Failed to load activity', { error: e.message });
+      content.innerHTML = '<div class="empty-state">Failed to load activity</div>';
+    }
+  }
+
+  async loadErrors() {
+    const panel = document.getElementById('errorsPanel');
+    const content = document.getElementById('errorsContent');
+    const badge = document.getElementById('errorsBadge');
+    if (!content || !panel) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/errors?hours=24`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      const totalErrors = data.error_count + data.warning_count;
+
+      if (totalErrors === 0) {
+        panel.classList.add('hidden');
+        return;
+      }
+
+      panel.classList.remove('hidden');
+
+      if (badge) {
+        badge.textContent = `${data.error_count} errors, ${data.warning_count} warnings`;
+      }
+
+      const allItems = [
+        ...data.errors.map(e => ({ ...e, level: 'error' })),
+        ...data.warnings.map(w => ({ ...w, level: 'warning' }))
+      ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+
+      content.innerHTML = allItems.map(item => `
+        <div class="error-item">
+          <div class="error-header">
+            <span class="error-level ${item.level}">${item.level.toUpperCase()}</span>
+            <span class="error-meta">${this.formatRelativeTime(item.timestamp)}</span>
+          </div>
+          <div class="error-message">${this.escapeHtml(item.message)}</div>
+          <div class="error-meta">Source: ${item.source}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      log('ERROR', 'Failed to load errors', { error: e.message });
+      panel.classList.add('hidden');
+    }
+  }
+
+  // Utility functions
+  getActivityIcon(type) {
+    const icons = {
+      inbound: '&#8592;',   // ←
+      outbound: '&#8594;',  // →
+      action: '&#9881;',    // ⚙
+      error: '&#9888;',     // ⚠
+      system: '&#9670;'     // ◆
+    };
+    return icons[type] || '&#8226;';
+  }
+
+  formatTime(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  formatRelativeTime(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return date.toLocaleDateString();
+  }
+
+  formatDuration(seconds) {
+    if (!seconds) return '-';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days}d ${hours % 24}h`;
+    }
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+}
+
+// Tab Management
+let dashboardView = null;
+
+function setupTabs() {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.dataset.tab;
+
+      // Update button states
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Update content visibility
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        if (content.id === `${tabId}Tab`) {
+          content.classList.add('active');
+        }
+      });
+
+      // Start/stop dashboard refresh
+      if (tabId === 'dashboard') {
+        if (!dashboardView) {
+          dashboardView = new DashboardView();
+        }
+        dashboardView.start();
+      } else if (dashboardView) {
+        dashboardView.stop();
+      }
+
+      log('UI', `Switched to ${tabId} tab`);
+    });
+  });
+}
+
+// Initialize tabs on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  setupTabs();
+});
